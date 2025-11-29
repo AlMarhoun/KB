@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Wallet, Gift, PieChart, TrendingUp } from 'lucide-react';
+import HelpTooltip from './HelpTooltip';
 
 interface Props {
   theme: 'light' | 'dark';
@@ -32,6 +33,9 @@ export default function DividendCalculator({ theme, language }: Props) {
       totalCash: 'إجمالي النقد',
       bonusSharesReceived: 'أسهم المنحة',
       finalPosition: 'المركز النهائي',
+      helpNumShares: 'إجمالي عدد الأسهم التي تمتلكها في هذا السهم',
+      helpCashDividend: 'مبلغ التوزيع النقدي لكل سهم بالفلس',
+      helpBonusPercent: 'نسبة أسهم المنحة المئوية التي سيتم توزيعها',
     },
     en: {
       title: 'Dividend Calculator',
@@ -53,6 +57,9 @@ export default function DividendCalculator({ theme, language }: Props) {
       totalCash: 'Total Cash',
       bonusSharesReceived: 'Bonus Shares',
       finalPosition: 'Final Position',
+      helpNumShares: 'Total number of shares you own in this stock',
+      helpCashDividend: 'The cash dividend amount per share in fils',
+      helpBonusPercent: 'The percentage of bonus shares to be distributed',
     },
   };
 
@@ -108,9 +115,12 @@ export default function DividendCalculator({ theme, language }: Props) {
 
           <div className="space-y-4">
             <div>
-              <label className={`block text-sm mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                {t.numShares}
-              </label>
+              <div className="flex items-center gap-2 mb-2">
+                <label className={`block text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                  {t.numShares}
+                </label>
+                <HelpTooltip content={t.helpNumShares} theme={theme} />
+              </div>
               <input
                 type="number"
                 value={numShares}
@@ -120,9 +130,12 @@ export default function DividendCalculator({ theme, language }: Props) {
             </div>
 
             <div>
-              <label className={`block text-sm mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                {t.cashDividend}
-              </label>
+              <div className="flex items-center gap-2 mb-2">
+                <label className={`block text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                  {t.cashDividend}
+                </label>
+                <HelpTooltip content={t.helpCashDividend} theme={theme} />
+              </div>
               <input
                 type="number"
                 value={cashDividend}
@@ -132,9 +145,12 @@ export default function DividendCalculator({ theme, language }: Props) {
             </div>
 
             <div>
-              <label className={`block text-sm mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                {t.bonusPercent}
-              </label>
+              <div className="flex items-center gap-2 mb-2">
+                <label className={`block text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                  {t.bonusPercent}
+                </label>
+                <HelpTooltip content={t.helpBonusPercent} theme={theme} />
+              </div>
               <input
                 type="number"
                 value={bonusPercent}

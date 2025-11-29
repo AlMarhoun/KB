@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { TrendingDown, TrendingUp, DollarSign } from 'lucide-react';
+import HelpTooltip from './HelpTooltip';
 
 interface Props {
   theme: 'light' | 'dark';
@@ -29,6 +30,11 @@ export default function ExPriceCalculator({ theme, language }: Props) {
       originalPrice: 'السعر الأصلي',
       adjustedExPrice: 'السعر المعدل',
       fils: 'فلس',
+      helpClosingPrice: 'سعر إغلاق السهم (في تاريخ الحيازة) قبل التوزيعات أو التغييرات الرأسمالية',
+      helpBonusPercent: 'نسبة أسهم المنحة المئوية التي سوف يتم توزيعها على المساهمين',
+      helpCapitalIncrease: 'نسبة زيادة رأس المال المئوية عند اكتتاب أسهم جديدة',
+      helpCapitalReduction: 'نسبة تخفيض رأس المال المئوية (استخدم قيمة سالبة للتخفيض)',
+      helpSubscriptionPrice: 'سعر الاكتتاب للسهم الجديد عند زيادة رأس المال',
     },
     en: {
       title: 'Ex-Price Calculator',
@@ -45,6 +51,11 @@ export default function ExPriceCalculator({ theme, language }: Props) {
       originalPrice: 'Original Price',
       adjustedExPrice: 'Adjusted Price',
       fils: 'fils',
+      helpClosingPrice: 'The closing price of the share before distributions or capital changes',
+      helpBonusPercent: 'The percentage of bonus shares being distributed to shareholders',
+      helpCapitalIncrease: 'The percentage of capital increase when subscribing to new shares',
+      helpCapitalReduction: 'The percentage of capital reduction (use negative value for reduction)',
+      helpSubscriptionPrice: 'The subscription price per new share when capital is increased',
     },
   };
 
@@ -137,9 +148,12 @@ export default function ExPriceCalculator({ theme, language }: Props) {
 
           <div className="space-y-4">
             <div>
-              <label className={`block text-sm mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                {t.closingPrice}
-              </label>
+              <div className="flex items-center gap-2 mb-2">
+                <label className={`block text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                  {t.closingPrice}
+                </label>
+                <HelpTooltip content={t.helpClosingPrice} theme={theme} />
+              </div>
               <input
                 type="number"
                 value={closingPrice}
@@ -149,9 +163,12 @@ export default function ExPriceCalculator({ theme, language }: Props) {
             </div>
 
             <div>
-              <label className={`block text-sm mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                {t.bonusPercent}
-              </label>
+              <div className="flex items-center gap-2 mb-2">
+                <label className={`block text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                  {t.bonusPercent}
+                </label>
+                <HelpTooltip content={t.helpBonusPercent} theme={theme} />
+              </div>
               <input
                 type="number"
                 value={bonusPercent}
@@ -161,9 +178,12 @@ export default function ExPriceCalculator({ theme, language }: Props) {
             </div>
 
             <div>
-              <label className={`block text-sm mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                {t.capitalIncrease}
-              </label>
+              <div className="flex items-center gap-2 mb-2">
+                <label className={`block text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                  {t.capitalIncrease}
+                </label>
+                <HelpTooltip content={t.helpCapitalIncrease} theme={theme} />
+              </div>
               <input
                 type="number"
                 value={capitalIncreasePercent}
@@ -173,9 +193,12 @@ export default function ExPriceCalculator({ theme, language }: Props) {
             </div>
 
             <div>
-              <label className={`block text-sm mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                {t.capitalReduction}
-              </label>
+              <div className="flex items-center gap-2 mb-2">
+                <label className={`block text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                  {t.capitalReduction}
+                </label>
+                <HelpTooltip content={t.helpCapitalReduction} theme={theme} />
+              </div>
               <input
                 type="number"
                 value={capitalReductionPercent}
@@ -185,9 +208,12 @@ export default function ExPriceCalculator({ theme, language }: Props) {
             </div>
 
             <div>
-              <label className={`block text-sm mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                {t.subscriptionPrice}
-              </label>
+              <div className="flex items-center gap-2 mb-2">
+                <label className={`block text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                  {t.subscriptionPrice}
+                </label>
+                <HelpTooltip content={t.helpSubscriptionPrice} theme={theme} />
+              </div>
               <input
                 type="number"
                 value={subscriptionPrice}

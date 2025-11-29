@@ -1,37 +1,55 @@
 import { useState } from 'react';
-import { Moon, Sun, Calculator, TrendingUp, Globe, Youtube } from 'lucide-react';
+import { Moon, Sun, Calculator, TrendingUp, Globe, Youtube, BarChart3, Home } from 'lucide-react';
 import ExPriceCalculator from './components/ExPriceCalculator';
 import DividendCalculator from './components/DividendCalculator';
+import AverageCostCalculator from './components/AverageCostCalculator';
+import HomePage from './components/HomePage';
 import logo from 'figma:asset/16eee7832794c6a37df4e9d945d102116cae8132.png';
 
 type Theme = 'light' | 'dark';
 type Language = 'ar' | 'en';
-type Module = 'ex-price' | 'dividend';
+type Module = 'home' | 'ex-price' | 'dividend' | 'average-cost';
 
 export default function App() {
   const [theme, setTheme] = useState<Theme>('dark');
   const [language, setLanguage] = useState<Language>('ar');
-  const [activeModule, setActiveModule] = useState<Module>('ex-price');
+  const [activeModule, setActiveModule] = useState<Module>('home');
 
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
   const toggleLanguage = () => setLanguage(language === 'ar' ? 'en' : 'ar');
+
+  const handleModuleClick = (module: Module) => {
+    setActiveModule(module);
+  };
 
   const translations = {
     ar: {
       title: 'حاسبة بورصة الكويت',
       subtitle: 'التفسيخات والتوزيعات',
+      home: 'الرئيسية',
       exPrice: 'حاسبة التفسيخ مع نطاق',
       dividend: 'حاسبة التوزيعات',
+      averageCost: 'حاسبة متوسط التكلفة',
     },
     en: {
       title: 'Kuwait Bourse Calculator',
       subtitle: 'Ex-Price & Dividends',
+      home: 'Home',
       exPrice: 'Ex-Price Calculator',
       dividend: 'Dividend & Bonus Calculator',
+      averageCost: 'Average Cost Calculator',
     },
   };
 
   const t = translations[language];
+
+  // All navigation items - Home is treated the same as calculators
+  const navigationItems = [
+    { id: 'home' as const, icon: Home, label: t.home },
+    { id: 'ex-price' as const, icon: TrendingUp, label: t.exPrice },
+    { id: 'dividend' as const, icon: Calculator, label: t.dividend },
+    { id: 'average-cost' as const, icon: BarChart3, label: t.averageCost },
+  ];
 
   return (
     <div
@@ -102,47 +120,59 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex gap-2 mt-6">
-            <button
-              onClick={() => setActiveModule('ex-price')}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all ${
-                activeModule === 'ex-price'
-                  ? theme === 'dark'
-                    ? 'bg-gradient-to-r from-blue-500 to-violet-600 text-white shadow-lg shadow-blue-500/30'
-                    : 'bg-gradient-to-r from-blue-500 to-violet-600 text-white shadow-lg shadow-blue-500/30'
-                  : theme === 'dark'
-                  ? 'bg-slate-800/50 text-slate-400 hover:bg-slate-800'
-                  : 'bg-white/50 text-slate-600 hover:bg-white'
-              }`}
-            >
-              <TrendingUp className="w-4 h-4" />
-              <span>{t.exPrice}</span>
-            </button>
+          <div className="flex gap-2 mt-6 flex-wrap items-center">
+            {/* All Navigation Items - Home and Calculators use the same logic */}
+            {navigationItems.map((item) => {
+              const Icon = item.icon;
+              const isExpanded = activeModule === item.id;
+              const isActive = activeModule === item.id;
 
-            <button
-              onClick={() => setActiveModule('dividend')}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all ${
-                activeModule === 'dividend'
-                  ? theme === 'dark'
-                    ? 'bg-gradient-to-r from-blue-500 to-violet-600 text-white shadow-lg shadow-blue-500/30'
-                    : 'bg-gradient-to-r from-blue-500 to-violet-600 text-white shadow-lg shadow-blue-500/30'
-                  : theme === 'dark'
-                  ? 'bg-slate-800/50 text-slate-400 hover:bg-slate-800'
-                  : 'bg-white/50 text-slate-600 hover:bg-white'
-              }`}
-            >
-              <Calculator className="w-4 h-4" />
-              <span>{t.dividend}</span>
-            </button>
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleModuleClick(item.id)}
+                  className={`flex items-center gap-2 rounded-lg transition-all duration-300 overflow-hidden ${
+                    isActive
+                      ? theme === 'dark'
+                        ? 'bg-gradient-to-r from-blue-500 to-violet-600 text-white shadow-lg shadow-blue-500/30'
+                        : 'bg-gradient-to-r from-blue-500 to-violet-600 text-white shadow-lg shadow-blue-500/30'
+                      : theme === 'dark'
+                      ? 'bg-slate-800/50 text-slate-400 hover:bg-slate-800'
+                      : 'bg-white/50 text-slate-600 hover:bg-white'
+                  } ${
+                    isExpanded ? 'px-6 py-3' : 'p-3'
+                  }`}
+                  style={{
+                    maxWidth: isExpanded ? '400px' : '48px',
+                  }}
+                >
+                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  <span
+                    className={`whitespace-nowrap transition-all duration-300 ${
+                      isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'
+                    }`}
+                    style={{
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {item.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeModule === 'ex-price' ? (
+        {activeModule === 'home' ? (
+          <HomePage theme={theme} language={language} onNavigate={handleModuleClick} />
+        ) : activeModule === 'ex-price' ? (
           <ExPriceCalculator theme={theme} language={language} />
-        ) : (
+        ) : activeModule === 'dividend' ? (
           <DividendCalculator theme={theme} language={language} />
+        ) : (
+          <AverageCostCalculator theme={theme} language={language} />
         )}
       </main>
 
