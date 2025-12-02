@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Wallet, Gift, PieChart, TrendingUp } from 'lucide-react';
+import { Wallet, Gift, PieChart, TrendingUp, RotateCcw, Copy, Calculator } from 'lucide-react';
 import HelpTooltip from './HelpTooltip';
+import { toast } from 'sonner@2.0.3';
 
 interface Props {
   theme: 'light' | 'dark';
@@ -8,9 +9,10 @@ interface Props {
 }
 
 export default function DividendCalculator({ theme, language }: Props) {
-  const [numShares, setNumShares] = useState('100000');
-  const [cashDividend, setCashDividend] = useState('12');
-  const [bonusPercent, setBonusPercent] = useState('8');
+  const [numShares, setNumShares] = useState('');
+  const [cashDividend, setCashDividend] = useState('');
+  const [bonusPercent, setBonusPercent] = useState('');
+  const [isCalculated, setIsCalculated] = useState(false);
 
   const translations = {
     ar: {
@@ -20,7 +22,8 @@ export default function DividendCalculator({ theme, language }: Props) {
       numShares: 'عدد الأسهم (NS)',
       cashDividend: 'التوزيع النقدي (CD) - فلس',
       bonusPercent: 'نسبة المنحة (B%)',
-      totalCashDividend: 'إجمالي التوزيعات',
+      calculate: 'احسب',
+      totalCashDividend: ' إجمالي التوزيعات النقدية',
       bonusShares: 'أسهم المنحة',
       finalShares: 'إجمالي الأسهم',
       kd: 'د.ك',
@@ -32,7 +35,11 @@ export default function DividendCalculator({ theme, language }: Props) {
       bonusRate: 'نسبة المنحة',
       totalCash: 'إجمالي النقد',
       bonusSharesReceived: 'أسهم المنحة',
-      finalPosition: 'المركز النهائي',
+      finalPosition: 'اجمالي الاسهم بعد التوزيع',
+      resetInputs: 'مسح المدخلات',
+      copyResult: 'نسخ النتيجة',
+      copiedSuccess: 'تم النسخ بنجاح!',
+      guidanceMessage: 'أدخل البيانات واضغط على "احسب" لعرض النتائج',
       helpNumShares: 'إجمالي عدد الأسهم التي تمتلكها في هذا السهم',
       helpCashDividend: 'مبلغ التوزيع النقدي لكل سهم بالفلس',
       helpBonusPercent: 'نسبة أسهم المنحة المئوية التي سيتم توزيعها',
@@ -44,6 +51,7 @@ export default function DividendCalculator({ theme, language }: Props) {
       numShares: 'Number of Shares (NS)',
       cashDividend: 'Cash Dividend (CD) - fils',
       bonusPercent: 'Bonus % (B%)',
+      calculate: 'Calculate',
       totalCashDividend: 'Total Cash',
       bonusShares: 'Bonus Shares',
       finalShares: 'Final Shares',
@@ -57,6 +65,10 @@ export default function DividendCalculator({ theme, language }: Props) {
       totalCash: 'Total Cash',
       bonusSharesReceived: 'Bonus Shares',
       finalPosition: 'Final Position',
+      resetInputs: 'Reset Inputs',
+      copyResult: 'Copy Result',
+      copiedSuccess: 'Copied successfully!',
+      guidanceMessage: 'Enter the data and click "Calculate" to view results',
       helpNumShares: 'Total number of shares you own in this stock',
       helpCashDividend: 'The cash dividend amount per share in fils',
       helpBonusPercent: 'The percentage of bonus shares to be distributed',
@@ -65,7 +77,15 @@ export default function DividendCalculator({ theme, language }: Props) {
 
   const t = translations[language];
 
+  const handleCalculate = () => {
+    setIsCalculated(true);
+  };
+
   const calc = useMemo(() => {
+    if (!isCalculated) {
+      return { totalCashFils: 0, totalCashKD: 0, bonusShares: 0, finalShares: 0 };
+    }
+
     const NS = parseFloat(numShares) || 0;
     const CD = parseFloat(cashDividend) || 0;
     const B = parseFloat(bonusPercent) / 100 || 0;
@@ -76,7 +96,52 @@ export default function DividendCalculator({ theme, language }: Props) {
     const finalShares = NS + bonusShares;
 
     return { totalCashFils, totalCashKD, bonusShares, finalShares };
-  }, [numShares, cashDividend, bonusPercent]);
+  }, [numShares, cashDividend, bonusPercent, isCalculated]);
+
+  const handleReset = () => {
+    setNumShares('');
+    setCashDividend('');
+    setBonusPercent('');
+    setIsCalculated(false);
+  };
+
+  const handleCopyResult = () => {
+    if (!isCalculated) return;
+
+    const NS = parseFloat(numShares) || 0;
+    const CD = parseFloat(cashDividend) || 0;
+    const B = parseFloat(bonusPercent) || 0;
+
+    let copyText = 'نتائج حساب التوزيعات:\n\n';
+
+    if (NS > 0) {
+      copyText += `عدد الأسهم: ${formatNum(NS)}\n`;
+    }
+    if (CD > 0) {
+      copyText += `التوزيع النقدي: ${CD} فلس\n`;
+    }
+    if (B > 0) {
+      copyText += `نسبة أسهم المنحة: ${B}%\n`;
+    }
+
+    copyText += '\n';
+
+    if (calc.totalCashKD > 0) {
+      copyText += `إجمالي التوزيع النقدي: ${formatNum(calc.totalCashKD)} دينار\n`;
+    }
+    if (calc.bonusShares > 0) {
+      copyText += `عدد أسهم المنحة: ${formatNum(calc.bonusShares)} سهم\n`;
+    }
+    if (calc.finalShares > 0) {
+      copyText += `إجمالي عدد الأسهم بعد المنحة: ${formatNum(calc.finalShares)} سهم\n`;
+    }
+
+    copyText += '\nتم النسخ من موقع https://kb-almarhoun.vercel.app/';
+
+    navigator.clipboard.writeText(copyText).then(() => {
+      toast.success(t.copiedSuccess);
+    });
+  };
 
   const formatNum = (n: number) => {
     if (!isFinite(n)) return '0';
@@ -91,6 +156,12 @@ export default function DividendCalculator({ theme, language }: Props) {
     theme === 'dark'
       ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-500'
       : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'
+  }`;
+
+  const buttonClass = `px-4 py-2 rounded-lg transition-all flex items-center gap-2 ${
+    theme === 'dark'
+      ? 'bg-slate-700 hover:bg-slate-600 text-white'
+      : 'bg-slate-200 hover:bg-slate-300 text-slate-900'
   }`;
 
   return (
@@ -124,7 +195,10 @@ export default function DividendCalculator({ theme, language }: Props) {
               <input
                 type="number"
                 value={numShares}
-                onChange={(e) => setNumShares(e.target.value)}
+                onChange={(e) => {
+                  setNumShares(e.target.value);
+                  setIsCalculated(false);
+                }}
                 className={inputClass}
               />
             </div>
@@ -139,7 +213,10 @@ export default function DividendCalculator({ theme, language }: Props) {
               <input
                 type="number"
                 value={cashDividend}
-                onChange={(e) => setCashDividend(e.target.value)}
+                onChange={(e) => {
+                  setCashDividend(e.target.value);
+                  setIsCalculated(false);
+                }}
                 className={inputClass}
               />
             </div>
@@ -154,141 +231,180 @@ export default function DividendCalculator({ theme, language }: Props) {
               <input
                 type="number"
                 value={bonusPercent}
-                onChange={(e) => setBonusPercent(e.target.value)}
+                onChange={(e) => {
+                  setBonusPercent(e.target.value);
+                  setIsCalculated(false);
+                }}
                 className={inputClass}
               />
             </div>
+
+            {/* Calculate Button */}
+            <button
+              onClick={handleCalculate}
+              className={`w-full py-3 rounded-lg font-semibold transition-all ${
+                theme === 'dark'
+                  ? 'bg-gradient-to-r from-blue-500 to-violet-600 text-white hover:shadow-lg hover:shadow-blue-500/30'
+                  : 'bg-gradient-to-r from-blue-500 to-violet-600 text-white hover:shadow-lg hover:shadow-blue-500/30'
+              }`}
+            >
+              {t.calculate}
+            </button>
+
+            {/* Reset Button */}
+            <button onClick={handleReset} className={buttonClass}>
+              <RotateCcw className="w-4 h-4" />
+              <span>{t.resetInputs}</span>
+            </button>
           </div>
         </div>
 
         <div className="lg:col-span-2 space-y-6">
-          <div className="grid md:grid-cols-3 gap-4">
-            <div className={cardClass + ' p-5'}>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600">
-                  <Wallet className="w-4 h-4 text-white" />
+          {!isCalculated ? (
+            <div className={cardClass + ' p-12 text-center'}>
+              <Calculator className={`w-16 h-16 mx-auto mb-4 ${theme === 'dark' ? 'text-slate-600' : 'text-slate-300'}`} />
+              <p className={theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>
+                {t.guidanceMessage}
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="flex justify-end mb-4">
+                <button onClick={handleCopyResult} className={buttonClass}>
+                  <Copy className="w-4 h-4" />
+                  <span>{t.copyResult}</span>
+                </button>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className={cardClass + ' p-5'}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600">
+                      <Wallet className="w-4 h-4 text-white" />
+                    </div>
+                    <h4 className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                      {t.totalCashDividend}
+                    </h4>
+                  </div>
+                  <div className="text-2xl font-bold bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent">
+                    {formatNum(calc.totalCashKD)} {t.kd}
+                  </div>
+                  <div className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`}>
+                    ({formatNum(calc.totalCashFils)} {t.fils})
+                  </div>
                 </div>
-                <h4 className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                  {t.totalCashDividend}
-                </h4>
-              </div>
-              <div className="text-2xl font-bold bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent">
-                {formatNum(calc.totalCashKD)} {t.kd}
-              </div>
-              <div className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`}>
-                ({formatNum(calc.totalCashFils)} {t.fils})
-              </div>
-            </div>
 
-            <div className={cardClass + ' p-5'}>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600">
-                  <Gift className="w-4 h-4 text-white" />
+                <div className={cardClass + ' p-5'}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600">
+                      <Gift className="w-4 h-4 text-white" />
+                    </div>
+                    <h4 className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                      {t.bonusShares}
+                    </h4>
+                  </div>
+                  <div className="text-2xl font-bold bg-gradient-to-r from-violet-500 to-purple-600 bg-clip-text text-transparent">
+                    {formatNum(calc.bonusShares)}
+                  </div>
+                  <div className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`}>
+                    {t.shares}
+                  </div>
                 </div>
-                <h4 className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                  {t.bonusShares}
-                </h4>
-              </div>
-              <div className="text-2xl font-bold bg-gradient-to-r from-violet-500 to-purple-600 bg-clip-text text-transparent">
-                {formatNum(calc.bonusShares)}
-              </div>
-              <div className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`}>
-                {t.shares}
-              </div>
-            </div>
 
-            <div className={cardClass + ' p-5'}>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600">
-                  <TrendingUp className="w-4 h-4 text-white" />
+                <div className={cardClass + ' p-5'}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600">
+                      <TrendingUp className="w-4 h-4 text-white" />
+                    </div>
+                    <h4 className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                      {t.finalShares}
+                    </h4>
+                  </div>
+                  <div className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-cyan-600 bg-clip-text text-transparent">
+                    {formatNum(calc.finalShares)}
+                  </div>
+                  <div className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`}>
+                    {t.shares}
+                  </div>
                 </div>
-                <h4 className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                  {t.finalShares}
-                </h4>
-              </div>
-              <div className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-cyan-600 bg-clip-text text-transparent">
-                {formatNum(calc.finalShares)}
-              </div>
-              <div className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`}>
-                {t.shares}
-              </div>
-            </div>
-          </div>
-
-          <div className={cardClass + ' p-6'}>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="p-2 rounded-lg bg-orange-500/10">
-                <PieChart className="w-5 h-5 text-orange-500" />
-              </div>
-              <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                {t.breakdown}
-              </h3>
-            </div>
-
-            <div className="space-y-3">
-              <div className={`flex justify-between items-center p-4 rounded-lg ${theme === 'dark' ? 'bg-slate-700/30' : 'bg-slate-100'}`}>
-                <span className={theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}>
-                  {t.yourShares}
-                </span>
-                <span className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                  {formatNum(parseFloat(numShares) || 0)} {t.shares}
-                </span>
               </div>
 
-              <div className={`flex justify-between items-center p-4 rounded-lg ${theme === 'dark' ? 'bg-slate-700/30' : 'bg-slate-100'}`}>
-                <span className={theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}>
-                  {t.cashPerShare}
-                </span>
-                <span className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                  {cashDividend} {t.fils}
-                </span>
-              </div>
+              <div className={cardClass + ' p-6'}>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="p-2 rounded-lg bg-orange-500/10">
+                    <PieChart className="w-5 h-5 text-orange-500" />
+                  </div>
+                  <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                    {t.breakdown}
+                  </h3>
+                </div>
 
-              <div className={`flex justify-between items-center p-4 rounded-lg ${theme === 'dark' ? 'bg-slate-700/30' : 'bg-slate-100'}`}>
-                <span className={theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}>
-                  {t.bonusRate}
-                </span>
-                <span className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                  {bonusPercent}%
-                </span>
-              </div>
+                <div className="space-y-3">
+                  <div className={`flex justify-between items-center p-4 rounded-lg ${theme === 'dark' ? 'bg-slate-700/30' : 'bg-slate-100'}`}>
+                    <span className={theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}>
+                      {t.yourShares}
+                    </span>
+                    <span className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                      {formatNum(parseFloat(numShares) || 0)} {t.shares}
+                    </span>
+                  </div>
 
-              <div className={`h-px ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'} my-2`} />
+                  <div className={`flex justify-between items-center p-4 rounded-lg ${theme === 'dark' ? 'bg-slate-700/30' : 'bg-slate-100'}`}>
+                    <span className={theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}>
+                      {t.cashPerShare}
+                    </span>
+                    <span className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                      {cashDividend} {t.fils}
+                    </span>
+                  </div>
 
-              <div className={`flex justify-between items-center p-4 rounded-lg bg-gradient-to-r ${
-                theme === 'dark' ? 'from-green-500/10 to-emerald-600/10' : 'from-green-50 to-emerald-50'
-              }`}>
-                <span className={`font-semibold ${theme === 'dark' ? 'text-green-400' : 'text-green-700'}`}>
-                  {t.totalCash}
-                </span>
-                <span className={`font-bold text-lg ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>
-                  {formatNum(calc.totalCashKD)} {t.kd}
-                </span>
-              </div>
+                  <div className={`flex justify-between items-center p-4 rounded-lg ${theme === 'dark' ? 'bg-slate-700/30' : 'bg-slate-100'}`}>
+                    <span className={theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}>
+                      {t.bonusRate}
+                    </span>
+                    <span className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                      {bonusPercent}%
+                    </span>
+                  </div>
 
-              <div className={`flex justify-between items-center p-4 rounded-lg bg-gradient-to-r ${
-                theme === 'dark' ? 'from-violet-500/10 to-purple-600/10' : 'from-violet-50 to-purple-50'
-              }`}>
-                <span className={`font-semibold ${theme === 'dark' ? 'text-violet-400' : 'text-violet-700'}`}>
-                  {t.bonusSharesReceived}
-                </span>
-                <span className={`font-bold text-lg ${theme === 'dark' ? 'text-violet-400' : 'text-violet-600'}`}>
-                  {formatNum(calc.bonusShares)} {t.shares}
-                </span>
-              </div>
+                  <div className={`h-px ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'} my-2`} />
 
-              <div className={`flex justify-between items-center p-4 rounded-lg bg-gradient-to-r ${
-                theme === 'dark' ? 'from-blue-500/10 to-cyan-600/10' : 'from-blue-50 to-cyan-50'
-              }`}>
-                <span className={`font-semibold ${theme === 'dark' ? 'text-blue-400' : 'text-blue-700'}`}>
-                  {t.finalPosition}
-                </span>
-                <span className={`font-bold text-lg ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>
-                  {formatNum(calc.finalShares)} {t.shares}
-                </span>
+                  <div className={`flex justify-between items-center p-4 rounded-lg bg-gradient-to-r ${
+                    theme === 'dark' ? 'from-green-500/10 to-emerald-600/10' : 'from-green-50 to-emerald-50'
+                  }`}>
+                    <span className={`font-semibold ${theme === 'dark' ? 'text-green-400' : 'text-green-700'}`}>
+                      {t.totalCash}
+                    </span>
+                    <span className={`font-bold text-lg ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>
+                      {formatNum(calc.totalCashKD)} {t.kd}
+                    </span>
+                  </div>
+
+                  <div className={`flex justify-between items-center p-4 rounded-lg bg-gradient-to-r ${
+                    theme === 'dark' ? 'from-violet-500/10 to-purple-600/10' : 'from-violet-50 to-purple-50'
+                  }`}>
+                    <span className={`font-semibold ${theme === 'dark' ? 'text-violet-400' : 'text-violet-700'}`}>
+                      {t.bonusSharesReceived}
+                    </span>
+                    <span className={`font-bold text-lg ${theme === 'dark' ? 'text-violet-400' : 'text-violet-600'}`}>
+                      {formatNum(calc.bonusShares)} {t.shares}
+                    </span>
+                  </div>
+
+                  <div className={`flex justify-between items-center p-4 rounded-lg bg-gradient-to-r ${
+                    theme === 'dark' ? 'from-blue-500/10 to-cyan-600/10' : 'from-blue-50 to-cyan-50'
+                  }`}>
+                    <span className={`font-semibold ${theme === 'dark' ? 'text-blue-400' : 'text-blue-700'}`}>
+                      {t.finalPosition}
+                    </span>
+                    <span className={`font-bold text-lg ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>
+                      {formatNum(calc.finalShares)} {t.shares}
+                    </span>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </>
+          )}
         </div>
       </div>
     </div>

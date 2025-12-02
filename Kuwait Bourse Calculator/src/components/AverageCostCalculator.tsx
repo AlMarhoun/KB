@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Calculator, TrendingUp, DollarSign } from 'lucide-react';
+import { Calculator, TrendingUp, DollarSign, RotateCcw, Copy } from 'lucide-react';
 import HelpTooltip from './HelpTooltip';
+import { toast } from 'sonner@2.0.3';
 
 interface Props {
   theme: 'light' | 'dark';
@@ -8,10 +9,10 @@ interface Props {
 }
 
 export default function AverageCostCalculator({ theme, language }: Props) {
-  const [currentQuantity, setCurrentQuantity] = useState('10000');
-  const [currentPrice, setCurrentPrice] = useState('0.500');
-  const [quantityToBuy, setQuantityToBuy] = useState('5000');
-  const [purchasePrice, setPurchasePrice] = useState('0.450');
+  const [currentQuantity, setCurrentQuantity] = useState('');
+  const [currentPrice, setCurrentPrice] = useState('');
+  const [quantityToBuy, setQuantityToBuy] = useState('');
+  const [purchasePrice, setPurchasePrice] = useState('');
   const [isCalculated, setIsCalculated] = useState(false);
 
   const translations = {
@@ -30,6 +31,10 @@ export default function AverageCostCalculator({ theme, language }: Props) {
       newAveragePrice: 'متوسط السعر الجديد',
       shares: 'سهم',
       kd: 'د.ك',
+      resetInputs: 'مسح المدخلات',
+      copyResult: 'نسخ النتيجة',
+      copiedSuccess: 'تم النسخ بنجاح!',
+      guidanceMessage: 'أدخل البيانات واضغط على "احسب" لعرض النتائج',
       helpCurrentQuantity: 'إجمالي عدد الأسهم التي تمتلكها حاليًا قبل الصفقة الجديدة',
       helpCurrentPrice: 'متوسط التكلفة الحالي للسهم الواحد لهذا السهم',
       helpQuantityToBuy: 'عدد الأسهم الإضافية التي تخطط لشرائها',
@@ -50,6 +55,10 @@ export default function AverageCostCalculator({ theme, language }: Props) {
       newAveragePrice: 'New Average Price',
       shares: 'shares',
       kd: 'KD',
+      resetInputs: 'Reset Inputs',
+      copyResult: 'Copy Result',
+      copiedSuccess: 'Copied successfully!',
+      guidanceMessage: 'Enter the data and click "Calculate" to view results',
       helpCurrentQuantity: 'Total number of shares you already own before this new trade',
       helpCurrentPrice: 'Your current average cost per share for this stock',
       helpQuantityToBuy: 'How many additional shares you plan to purchase',
@@ -63,7 +72,19 @@ export default function AverageCostCalculator({ theme, language }: Props) {
     setIsCalculated(true);
   };
 
+  const handleReset = () => {
+    setCurrentQuantity('');
+    setCurrentPrice('');
+    setQuantityToBuy('');
+    setPurchasePrice('');
+    setIsCalculated(false);
+  };
+
   const calculateResults = () => {
+    if (!isCalculated) {
+      return { totalQuantity: 0, totalCost: 0, newAveragePrice: 0, isValid: false };
+    }
+
     const cq = parseFloat(currentQuantity) || 0;
     const cp = parseFloat(currentPrice) || 0;
     const qtb = parseFloat(quantityToBuy) || 0;
@@ -83,6 +104,50 @@ export default function AverageCostCalculator({ theme, language }: Props) {
 
   const results = calculateResults();
 
+  const handleCopyResult = () => {
+    if (!isCalculated || !results.isValid) {
+      return;
+    }
+
+    const cq = parseFloat(currentQuantity) || 0;
+    const cp = parseFloat(currentPrice) || 0;
+    const qtb = parseFloat(quantityToBuy) || 0;
+    const pp = parseFloat(purchasePrice) || 0;
+
+    let copyText = 'نتائج حساب متوسط التكلفة:\n\n';
+
+    if (cq > 0) {
+      copyText += `الكمية الحالية: ${formatNum(cq, 0)} سهم\n`;
+    }
+    if (cp > 0) {
+      copyText += `المتوسط الحالي: ${formatNum(cp)}\n`;
+    }
+    if (qtb > 0) {
+      copyText += `الكمية المراد شراؤها: ${formatNum(qtb, 0)} سهم\n`;
+    }
+    if (pp > 0) {
+      copyText += `سعر الشراء: ${formatNum(pp)}\n`;
+    }
+
+    copyText += '\n';
+
+    if (results.totalQuantity > 0) {
+      copyText += `إجمالي الكمية: ${formatNum(results.totalQuantity, 0)} سهم\n`;
+    }
+    if (results.totalCost > 0) {
+      copyText += `إجمالي الكلفة: ${formatNum(results.totalCost)}\n`;
+    }
+    if (results.newAveragePrice > 0) {
+      copyText += `المتوسط الجديد: ${formatNum(results.newAveragePrice)}\n`;
+    }
+
+    copyText += '\nتم النسخ من موقع https://kb-almarhoun.vercel.app/';
+
+    navigator.clipboard.writeText(copyText).then(() => {
+      toast.success(t.copiedSuccess);
+    });
+  };
+
   const formatNum = (n: number, decimals: number = 3) => {
     if (!isFinite(n)) return '0';
     return n.toLocaleString(language === 'ar' ? 'ar-KW' : 'en-US', {
@@ -99,6 +164,12 @@ export default function AverageCostCalculator({ theme, language }: Props) {
     theme === 'dark'
       ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-500'
       : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'
+  }`;
+
+  const buttonClass = `px-4 py-2 rounded-lg transition-all flex items-center gap-2 ${
+    theme === 'dark'
+      ? 'bg-slate-700 hover:bg-slate-600 text-white'
+      : 'bg-slate-200 hover:bg-slate-300 text-slate-900'
   }`;
 
   return (
@@ -206,12 +277,32 @@ export default function AverageCostCalculator({ theme, language }: Props) {
             >
               {t.calculate}
             </button>
+
+            {/* Reset Button */}
+            <button onClick={handleReset} className={buttonClass}>
+              <RotateCcw className="w-4 h-4" />
+              <span>{t.resetInputs}</span>
+            </button>
           </div>
         </div>
 
         <div className="lg:col-span-2 space-y-6">
-          {isCalculated && results.isValid && (
+          {!isCalculated ? (
+            <div className={cardClass + ' p-12 text-center'}>
+              <Calculator className={`w-16 h-16 mx-auto mb-4 ${theme === 'dark' ? 'text-slate-600' : 'text-slate-300'}`} />
+              <p className={theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>
+                {t.guidanceMessage}
+              </p>
+            </div>
+          ) : (
             <>
+              <div className="flex justify-end">
+                <button onClick={handleCopyResult} className={buttonClass}>
+                  <Copy className="w-4 h-4" />
+                  <span>{t.copyResult}</span>
+                </button>
+              </div>
+
               <div className={cardClass + ' p-6'}>
                 <div className="flex items-center gap-2 mb-4">
                   <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600">
@@ -329,17 +420,6 @@ export default function AverageCostCalculator({ theme, language }: Props) {
                 </div>
               </div>
             </>
-          )}
-
-          {!isCalculated && (
-            <div className={cardClass + ' p-12 text-center'}>
-              <Calculator className={`w-16 h-16 mx-auto mb-4 ${theme === 'dark' ? 'text-slate-600' : 'text-slate-300'}`} />
-              <p className={theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>
-                {language === 'ar'
-                  ? 'أدخل البيانات واضغط على "احسب" لعرض النتائج'
-                  : 'Enter the data and click "Calculate" to view results'}
-              </p>
-            </div>
           )}
         </div>
       </div>

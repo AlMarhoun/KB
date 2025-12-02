@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Moon, Sun, Calculator, TrendingUp, Globe, Youtube, BarChart3, Home } from 'lucide-react';
+import { Toaster } from 'sonner@2.0.3';
 import ExPriceCalculator from './components/ExPriceCalculator';
 import DividendCalculator from './components/DividendCalculator';
 import AverageCostCalculator from './components/AverageCostCalculator';
@@ -120,46 +121,54 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex gap-2 mt-6 flex-wrap items-center">
-            {/* All Navigation Items - Home and Calculators use the same logic */}
-            {navigationItems.map((item) => {
-              const Icon = item.icon;
-              const isExpanded = activeModule === item.id;
-              const isActive = activeModule === item.id;
-
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleModuleClick(item.id)}
-                  className={`flex items-center gap-2 rounded-lg transition-all duration-300 overflow-hidden ${
-                    isActive
-                      ? theme === 'dark'
-                        ? 'bg-gradient-to-r from-blue-500 to-violet-600 text-white shadow-lg shadow-blue-500/30'
-                        : 'bg-gradient-to-r from-blue-500 to-violet-600 text-white shadow-lg shadow-blue-500/30'
-                      : theme === 'dark'
-                      ? 'bg-slate-800/50 text-slate-400 hover:bg-slate-800'
-                      : 'bg-white/50 text-slate-600 hover:bg-white'
-                  } ${
-                    isExpanded ? 'px-6 py-3' : 'p-3'
-                  }`}
-                  style={{
-                    maxWidth: isExpanded ? '400px' : '48px',
-                  }}
-                >
-                  <Icon className="w-4 h-4 flex-shrink-0" />
-                  <span
-                    className={`whitespace-nowrap transition-all duration-300 ${
-                      isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'
+          {/* Navigation - Two Row Layout */}
+          <div className="mt-6 space-y-3">
+            {/* Top Row - Expanded Active Tab */}
+            <div className="flex justify-center">
+              {navigationItems.map((item) => {
+                if (item.id !== activeModule) return null;
+                const Icon = item.icon;
+                
+                return (
+                  <button
+                    key={item.id}
+                    className={`flex items-center gap-3 px-8 py-4 rounded-xl transition-all ${
+                      theme === 'dark'
+                        ? 'bg-gradient-to-r from-blue-500 to-violet-600 text-white shadow-xl shadow-blue-500/30'
+                        : 'bg-gradient-to-r from-blue-500 to-violet-600 text-white shadow-xl shadow-blue-500/30'
                     }`}
-                    style={{
-                      overflow: 'hidden',
-                    }}
                   >
-                    {item.label}
-                  </span>
-                </button>
-              );
-            })}
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    <span className="text-lg font-semibold whitespace-nowrap">
+                      {item.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Second Row - Icon-Only Small Buttons for Inactive Tabs */}
+            <div className="flex gap-2 flex-wrap items-center justify-center">
+              {navigationItems.map((item) => {
+                if (item.id === activeModule) return null;
+                const Icon = item.icon;
+
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleModuleClick(item.id)}
+                    className={`p-2.5 rounded-lg transition-all ${
+                      theme === 'dark'
+                        ? 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                        : 'bg-white/50 text-slate-600 hover:bg-white hover:text-slate-900'
+                    }`}
+                    aria-label={item.label}
+                  >
+                    <Icon className="w-5 h-5" />
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </header>
@@ -229,6 +238,12 @@ export default function App() {
           </div>
         </div>
       </footer>
+      
+      <Toaster 
+        theme={theme === 'dark' ? 'dark' : 'light'}
+        position="top-center"
+        richColors
+      />
     </div>
   );
 }
