@@ -193,7 +193,7 @@ export default function ExPriceCalculator({ theme, language }: Props) {
     if (adjustmentType === 'bonus') {
       copyText = `حساب التفسّيخ بعد توزيع أسهم منحة مجانية:
 
-سع�� الإغلاق: ${cp} فلس
+سعر الإغلاق: ${cp} فلس
 نسبة المنحة: ${B}%
 
 السعر المعدل بعد التفسّيخ: ${price} فلس
